@@ -14,7 +14,8 @@ origin, scheme or allow-list validation**. Any web page or installed app can the
 render arbitrary content inside Spotify's own payment UI, where there is no address
 bar for a user to inspect.
 
-`index.html` is the page used to demonstrate that a remote, non-Spotify origin is
+`start.html` is the trigger page: an ordinary web page whose link fires the deeplink,
+proving no malicious app is required. `index.html` is the page used to demonstrate that a remote, non-Spotify origin is
 loaded. It is **deliberately and prominently labelled as attacker-controlled**.
 
 ## This page collects nothing
